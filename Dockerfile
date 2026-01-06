@@ -1,15 +1,27 @@
-FROM python:3.12-alpine
+FROM golang:1.23-alpine AS build
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+WORKDIR /src
+
+RUN apk add --no-cache ca-certificates
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Build a static-ish binary for Alpine
+RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /out/syncthing-kicker ./cmd/syncthing-kicker
+
+
+FROM alpine:3.20
+
+RUN apk add --no-cache ca-certificates tzdata \
+    && adduser -D -H -u 65532 nonroot
 
 WORKDIR /app
 
-RUN apk add --no-cache tzdata \
-    && pip install --no-cache-dir croniter==2.0.5
+COPY --from=build /out/syncthing-kicker /usr/local/bin/syncthing-kicker
 
-COPY src/main.py /app/main.py
+USER nonroot
 
-USER nobody
-
-CMD ["python", "/app/main.py"]
+ENTRYPOINT ["/usr/local/bin/syncthing-kicker"]
