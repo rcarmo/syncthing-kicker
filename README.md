@@ -47,9 +47,9 @@ docker run --rm \
   -e ST_CRON="0 5 * * 1,3,5" \
   -e ST_FOLDERS="default" \
   syncthing-kicker
+```
 
-
-### docker-compose example
+### `docker-compose`
 
 ```yaml
 services:
@@ -64,7 +64,6 @@ services:
     restart: unless-stopped
 ```
 
-
 ## Development
 
 ```bash
@@ -72,7 +71,6 @@ make deps
 make test
 make check
 ```
-
 
 ### Per-folder schedules
 
