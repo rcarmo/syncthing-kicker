@@ -15,6 +15,8 @@ Since using intervals is fiddly and Syncthing completely tanks my Synology NAS C
 
 ## Configuration
 
+Recommended default global schedule: `0 5 * * 1,3,5` (5AM Mon/Wed/Fri).
+
 | Variable             | Default                 | Description                                                                                                                         |
 | -------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `ST_API_URL`         | `http://127.0.0.1:8384` | Base URL for the Syncthing API (trailing slash optional).                                                                           |
@@ -42,7 +44,7 @@ docker build -t syncthing-kicker .
 docker run --rm \
   -e ST_API_URL="http://syncthing:8384" \
   -e ST_API_KEY="<api-key>" \
-  -e ST_CRON="*/15 * * * *" \
+  -e ST_CRON="0 5 * * 1,3,5" \
   -e ST_FOLDERS="default" \
   syncthing-kicker
 
@@ -57,7 +59,7 @@ services:
       ST_API_URL: http://syncthing:8384
       ST_API_KEY: ${ST_API_KEY}
       TZ: Europe/Lisbon
-      ST_CRON: "*/15 * * * *"
+      ST_CRON: "0 5 * * 1,3,5"
       ST_FOLDERS: default
     restart: unless-stopped
 ```
