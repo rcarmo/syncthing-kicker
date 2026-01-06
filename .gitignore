@@ -20,6 +20,19 @@ ENV/
 # OS
 .DS_Store
 
+# Go
+/syncthing-kicker
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Build output
+dist/
+build/
+
 # Environment files (keep local secrets out of git)
 .env
 .env.*

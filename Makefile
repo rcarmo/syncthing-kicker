@@ -1,42 +1,42 @@
-# Project automation commands
+# Project automation
 
-PYTHON ?= python3
-PIP ?= $(PYTHON) -m pip
-RUFF ?= ruff
-PYTEST ?= pytest
-SRC_DIR ?= src
+GO ?= go
+GOFLAGS ?=
 
-.PHONY: help install lint format test check run clean
 
-help:
-	@echo "Available targets:"
-	@echo "  make install   Install package requirements and tooling"
-	@echo "  make lint      Run Ruff checks"
-	@echo "  make format    Format code with Ruff"
-	@echo "  make test      Run pytest"
-	@echo "  make check     Run linting and tests"
-	@echo "  make run       Start the Syncthing kicker service"
-	@echo "  make clean     Remove cache artifacts"
+.PHONY: help clean \
+	deps test fmt vet build run check
 
-install:
-	$(PIP) install --upgrade pip
-	$(PIP) install -r requirements.txt
-	$(PIP) install pytest ruff
+help: ## Show this help
+	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_\-]+:.*##/ {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-lint:
-	$(RUFF) check $(SRC_DIR)
-
-format:
-	$(RUFF) format $(SRC_DIR)
-
-# pytest exits with code 5 when it finds no tests; treat that as success for now.
-test:
-	$(PYTEST) || [ $$? -eq 5 ]
-
-check: lint test
-
-run:
-	$(PYTHON) $(SRC_DIR)/main.py
-
-clean:
+clean: ## Remove cache artifacts
 	rm -rf __pycache__ .pytest_cache .ruff_cache
+	$(GO) clean -testcache
+	rm -f syncthing-kicker
+	rm -rf dist/ build/
+
+deps: ## Download Go module dependencies
+	$(GO) mod download
+	$(GO) mod tidy
+	$(GO) mod verify
+
+test: ## Run Go tests
+	$(GO) test ./...
+
+fmt: ## Format Go code
+	$(GO) fmt ./...
+
+vet: ## Vet Go code
+	$(GO) vet ./...
+
+build: ## Build Go binary
+	$(GO) build $(GOFLAGS) ./cmd/syncthing-kicker
+
+run: ## Run Go service
+	$(GO) run ./cmd/syncthing-kicker
+
+check: ## Run Go fmt/vet/test
+	$(MAKE) fmt
+	$(MAKE) vet
+	$(MAKE) test
