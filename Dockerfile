@@ -2,26 +2,23 @@ FROM golang:1.23-alpine AS build
 
 WORKDIR /src
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates tzdata
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 
-# Build a static-ish binary for Alpine
+# Build a static binary
 RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /out/syncthing-kicker ./cmd/syncthing-kicker
 
 
-FROM alpine:3.20
+FROM gcr.io/distroless/static-debian12:nonroot
 
-RUN apk add --no-cache ca-certificates tzdata \
-    && adduser -D -H -u 65532 nonroot
+# Keep HTTPS verification working and support CRON_TZ/TZ timezones.
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
 
-WORKDIR /app
+COPY --from=build /out/syncthing-kicker /syncthing-kicker
 
-COPY --from=build /out/syncthing-kicker /usr/local/bin/syncthing-kicker
-
-USER nonroot
-
-ENTRYPOINT ["/usr/local/bin/syncthing-kicker"]
+ENTRYPOINT ["/syncthing-kicker"]
